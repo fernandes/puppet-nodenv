@@ -1,3 +1,3 @@
 package { 'git': ensure => 'installed' }
--> class { 'rbenv': }
--> rbenv::plugin { 'rbenv/ruby-build': }
+-> class { 'nodenv': }
+-> nodenv::plugin { 'nodenv/ruby-build': }

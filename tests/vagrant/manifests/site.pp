@@ -1,15 +1,15 @@
-class { 'rbenv': group => $group }
+class { 'nodenv': group => $group }
 
-rbenv::plugin { 'rbenv/ruby-build': }
-rbenv::plugin { 'rbenv/rbenv-vars': }
-rbenv::build { '2.1.7': global => true }
+nodenv::plugin { 'nodenv/ruby-build': }
+nodenv::plugin { 'nodenv/nodenv-vars': }
+nodenv::build { '2.1.7': global => true }
 
-rbenv::gem { 'rack':
+nodenv::gem { 'rack':
   ruby_version => '2.1.7',
   skip_docs    => true,
 }
 
-rbenv::gem { 'backup':
+nodenv::gem { 'backup':
   version      => '4.0.2',
   ruby_version => '2.1.7',
   skip_docs    => true,

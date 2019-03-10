@@ -1,37 +1,37 @@
-# == Class: rbenv
+# == Class: nodenv
 #
-# This module manages rbenv on Ubuntu. The default installation directory
-# allows rbenv to available for all users and applications.
+# This module manages nodenv on Ubuntu. The default installation directory
+# allows nodenv to available for all users and applications.
 #
 # === Variables
 #
 # [$repo_path]
-#   This is the git repo used to install rbenv.
-#   Default: 'https://github.com/rbenv/rbenv.git'
+#   This is the git repo used to install nodenv.
+#   Default: 'https://github.com/nodenv/nodenv.git'
 #   This variable is required.
 #
 # [$install_dir]
-#   This is where rbenv will be installed to.
-#   Default: '/usr/local/rbenv'
+#   This is where nodenv will be installed to.
+#   Default: '/usr/local/nodenv'
 #   This variable is required.
 #
 # [$owner]
-#   This defines who owns the rbenv install directory.
+#   This defines who owns the nodenv install directory.
 #   Default: 'root'
 #   This variable is required.
 #
 # [$group]
-#   This defines the group membership for rbenv.
+#   This defines the group membership for nodenv.
 #   Default: 'adm'
 #   This variable is required.
 #
 # [$latest]
-#   This defines whether the rbenv $install_dir is kept up-to-date.
+#   This defines whether the nodenv $install_dir is kept up-to-date.
 #   Defaults: false
 #   This variable is optional.
 #
 # [$version]
-#   This checks out the specified version of rbenv to $install_dir.
+#   This checks out the specified version of nodenv to $install_dir.
 #   Defaults: undef
 #   This variable is optional and has no affect if latest is true.
 #
@@ -46,7 +46,7 @@
 #   This variable is optional.
 #
 # [$manage_profile]
-#   Toggles the option to let the module install rbenv.sh into /etc/profile.d.
+#   Toggles the option to let the module install nodenv.sh into /etc/profile.d.
 #   Default: true
 #   This variable is optional.
 #
@@ -57,10 +57,10 @@
 #
 # === Examples
 #
-# class { rbenv: }  #Uses the default parameters
+# class { nodenv: }  #Uses the default parameters
 #
-# class { rbenv:  #Uses a user-defined installation path
-#   install_dir => '/opt/rbenv',
+# class { nodenv:  #Uses a user-defined installation path
+#   install_dir => '/opt/nodenv',
 # }
 #
 # More information on using Hiera to override parameters is available here:
@@ -74,30 +74,21 @@
 #
 # Copyright 2013 Justin Downing
 #
-class rbenv (
-  $repo_path      = 'https://github.com/rbenv/rbenv.git',
-  $install_dir    = '/usr/local/rbenv',
+class nodenv (
+  $repo_path      = 'https://github.com/nodenv/nodenv.git',
+  $install_dir    = '/usr/local/nodenv',
   $owner          = 'root',
-  $group          = $rbenv::params::group,
   $latest         = false,
   $version        = undef,
-  $env            = [],
-  $manage_deps    = true,
+  $group          = 'adm',
   $manage_profile = true,
-) inherits rbenv::params {
+) {
 
-  validate_array($env)
-
-  if $manage_deps {
-    include rbenv::deps
-  }
-
-  exec { 'git-clone-rbenv':
-    command     => "/usr/bin/git clone ${rbenv::repo_path} ${install_dir}",
+  exec { 'git-clone-nodenv':
+    command     => "/usr/bin/git clone ${nodenv::repo_path} ${install_dir}",
     creates     => $install_dir,
     cwd         => '/',
     user        => $owner,
-    environment => $env,
   }
 
   file { [
@@ -113,48 +104,44 @@ class rbenv (
   }
 
   if $manage_profile {
-    file { '/etc/profile.d/rbenv.sh':
+    file { '/etc/profile.d/nodenv.sh':
       ensure  => file,
-      content => template('rbenv/rbenv.sh'),
+      content => template('nodenv/nodenv.sh'),
       mode    => '0775'
     }
   }
 
-  # run `git pull` on each run if we want to keep rbenv updated
+  # run `git pull` on each run if we want to keep nodenv updated
   if $latest == true {
-    exec { 'checkout-rbenv':
+    exec { 'checkout-nodenv':
       command     => '/usr/bin/git checkout master',
       cwd         => $install_dir,
       user        => $owner,
-      environment => $env,
       onlyif      => '/usr/bin/test $(git rev-parse --abbrev-ref HEAD) != "master"',
       require     => File[$install_dir],
     }
-    -> exec { 'update-rbenv':
+    -> exec { 'update-nodenv':
       command     => '/usr/bin/git pull',
       cwd         => $install_dir,
       user        => $owner,
-      environment => $env,
       unless      => '/usr/bin/git fetch --quiet; /usr/bin/test $(git rev-parse HEAD) == $(git rev-parse @{u})',
       require     => File[$install_dir],
     }
   } elsif $version {
-    exec { 'fetch-rbenv':
+    exec { 'fetch-nodenv':
       command     => '/usr/bin/git fetch',
       cwd         => $install_dir,
       user        => $owner,
-      environment => $env,
       require     => File[$install_dir],
     }
-    ~> exec { 'update-rbenv':
+    ~> exec { 'update-nodenv':
       command     => "/usr/bin/git checkout ${version}",
       cwd         => $install_dir,
       user        => $owner,
-      environment => $env,
       refreshonly => true,
     }
   }
 
-  Exec['git-clone-rbenv'] -> File[$install_dir]
+  Exec['git-clone-nodenv'] -> File[$install_dir]
 
 }

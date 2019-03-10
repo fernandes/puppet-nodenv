@@ -2,9 +2,9 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  config.vm.hostname = 'puppet-rbenv'
+  config.vm.hostname = 'puppet-nodenv'
   config.vm.synced_folder "modules", "/tmp/puppet-modules", type: "rsync", rsync__exclude: ".git/"
-  config.vm.synced_folder ".", "/tmp/puppet-modules/rbenv", type: "rsync", rsync__exclude: [".git/","spec/"]
+  config.vm.synced_folder ".", "/tmp/puppet-modules/nodenv", type: "rsync", rsync__exclude: [".git/","spec/"]
 
   config.vm.provision :puppet do |puppet|
     puppet.environment_path = "tests"

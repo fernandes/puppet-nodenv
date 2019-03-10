@@ -1,78 +1,72 @@
-# puppet-rbenv
+# puppet-nodenv
 
-[![Build Status](https://travis-ci.org/justindowning/puppet-rbenv.png)](https://travis-ci.org/justindowning/puppet-rbenv) [![Puppet Forge](http://img.shields.io/puppetforge/v/jdowning/rbenv.svg?style=flat)](https://forge.puppetlabs.com/jdowning/rbenv)
+[![Build Status](https://travis-ci.org/fernandes/puppet-nodenv.png)](https://travis-ci.org/fernandes/puppet-nodenv) [![Puppet Forge](http://img.shields.io/puppetforge/v/jdowning/nodenv.svg?style=flat)](https://forge.puppetlabs.com/jdowning/nodenv)
 
 ## Description
-This Puppet module will install and manage [rbenv](http://rbenv.org). By default, it installs
-rbenv for systemwide use, rather than for a user or project. Additionally,
-you can install different versions of Ruby, rbenv plugins, and Ruby gems.
+
+This Puppet module will install and manage [nodenv](https://https://github.com/nodenv/nodenv). By default, it installs
+nodenv for systemwide use, rather than for a user or project. Additionally,
+you can install different versions of Node, nodenv plugins, and NPM packages.
 
 ## Installation
 
-`puppet module install --modulepath /path/to/puppet/modules jdowning-rbenv`
+`puppet module install --modulepath /path/to/puppet/modules fernandes-nodenv`
 
 ## Usage
 To use this module, you must declare it in your manifest like so:
 
-    class { 'rbenv': }
+    class { 'nodenv': }
 
-If you wish to install rbenv somewhere other than the default
-(`/usr/local/rbenv`), you can do so by declaring the `install_dir`:
+If you wish to install nodenv somewhere other than the default
+(`/usr/local/nodenv`), you can do so by declaring the `install_dir`:
 
-    class { 'rbenv': install_dir => '/opt/rbenv' }
+    class { 'nodenv': install_dir => '/opt/nodenv' }
 
-You can also ensure rbenv is kept up-to-date:
+You can also ensure nodenv is kept up-to-date:
 
-    class { 'rbenv':
-      install_dir => '/opt/rbenv'
+    class { 'nodenv':
+      install_dir => '/opt/nodenv'
       latest      => true
     }
 
-The class will merely setup rbenv on your host. If you wish to install
-rubies, plugins, or gems, you will have to add those declarations to your manifests
+The class will merely setup nodenv on your host. If you wish to install
+nodes, plugins, or packages, you will have to add those declarations to your manifests
 as well.
 
-### Installing Ruby using ruby-build
-Ruby requires additional packages to operate properly. Fortunately, this module
-will ensure these dependencies are met before installing Ruby. To install Ruby
-you will need the [ruby-build](https://github.com/rbenv/ruby-build) plugin. Once
-installed, you can install most any Ruby. Additionally, you can set the Ruby to
+### Installing Node using node-build
+Node requires additional packages to operate properly. Fortunately, this module
+will ensure these dependencies are met before installing Node. To install Node
+you will need the [ruby-build](https://github.com/nodenv/ruby-build) plugin. Once
+installed, you can install most any Node. Additionally, you can set the Node to
 be the global interpreter.
 
-    rbenv::plugin { 'rbenv/ruby-build': }
-    rbenv::build { '2.0.0-p247': global => true }
-    
-Sometimes Ruby needs to be patched prior to being compiled. puppet-rbenv
-currently supports patching from a single file located either on the
-Puppet Master or the local filesystem. Therefore, the only accepted paths are those
-starting with puppet:/// or file:///.
-
-    rbenv::build { '2.0.0-p247': patch => 'puppet:///modules/rbenv/patch.patch' }
-    rbenv::build { '2.0.0-p247': patch => 'file:///path/to/patch.patch' }
+    nodenv::plugin { 'nodenv/node-build': }
+    nodenv::build { '8.1.12': global => true }
 
 ## Plugins
 Plugins can be installed from GitHub using the following definiton:
 
-    rbenv::plugin { 'github_user/github_repo': }
+    nodenv::plugin { 'github_user/github_repo': }
 
 You can ensure a plugin is kept up-to-date. This is helpful for a plugin like
-`ruby-build` so that definitions are always available:
+`node-build` so that definitions are always available:
 
-    rbenv::plugin { 'rbenv/ruby-build': latest => true }
+    nodenv::plugin { 'nodenv/node-build': latest => true }
 
-## Gems
-Gems can be installed too! You *must* specify the `ruby_version` you want to
+## Packages
+
+Packages can be installed too! You *must* specify the `node_version` you want to
 install for.
 
-    rbenv::gem { 'thor': ruby_version => '2.0.0-p247' }
+    nodenv::gem { 'yarn': node_version => '8.1.12' }
 
 ## Full Example
 site.pp
 
-    class { 'rbenv': }
-    rbenv::plugin { [ 'rbenv/rbenv-vars', 'rbenv/ruby-build' ]: }
-    rbenv::build { '2.0.0-p247': global => true }
-    rbenv::gem { 'thor': ruby_version => '2.0.0-p247' }
+    class { 'nodenv': }
+    nodenv::plugin { [ 'nodenv/nodenv-vars', 'nodenv/ruby-build' ]: }
+    nodenv::build { '8.1.12': global => true }
+    nodenv::gem { 'yarn': node_version => '8.1.12' }
 
 ## Testing
 You can run specs in  this module with rspec:
@@ -82,7 +76,7 @@ You can run specs in  this module with rspec:
 
 Or with Docker:
 
-    docker build -t puppet-rbenv .
+    docker build -t puppet-nodenv .
 
 ## Vagrant
 
@@ -100,3 +94,7 @@ To test both boxes:
 To test one distribution:
 
     vagrant up [centos|ubuntu]
+
+## Credits
+
+This is the puppet-nodenv created by [jdowning](https://github.com/jdowning) ported to nodenv. All credits to him

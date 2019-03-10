@@ -1,11 +1,11 @@
-# == Define: rbenv::plugin
+# == Define: nodenv::plugin
 #
 # === Variables
 #
 # [$install_dir]
-#   This is set when you declare the rbenv class. There is no
-#   need to overrite it when calling the rbenv::gem define.
-#   Default: $rbenv::install_dir
+#   This is set when you declare the nodenv class. There is no
+#   need to overrite it when calling the nodenv::gem define.
+#   Default: $nodenv::install_dir
 #   This variable is required.
 #
 # [$repo_path]
@@ -18,34 +18,26 @@
 #   Defaults: false
 #   This vaiable is optional.
 #
-# [$env]
-#   This is used to set environment variables when installing plugins.
-#   Default: []
-#   This variable is optional.
-#
 # === Requires
 #
 # You will need to install the git package on the host system.
 #
 # === Examples
 #
-# rbenv::plugin { 'jamis/rbenv-gemset': }
+# nodenv::plugin { 'jamis/nodenv-gemset': }
 #
 # === Authors
 #
 # Justin Downing <justin@downing.us>
 #
-define rbenv::plugin(
-  $install_dir = $rbenv::install_dir,
+define nodenv::plugin(
+  $install_dir = $nodenv::install_dir,
   $repo_path   = "https://github.com/${name}.git",
   $latest      = false,
-  $env         = $rbenv::env,
 ) {
-  include rbenv
+  include nodenv
 
   $plugin = split($name, '/') # divide plugin name into array
-
-  Exec { environment => $env }
 
   exec { "install-${name}":
     command => "/usr/bin/git clone ${repo_path}",
@@ -53,8 +45,8 @@ define rbenv::plugin(
     onlyif  => "/usr/bin/test -d ${install_dir}/plugins",
     unless  => "/usr/bin/test -d ${install_dir}/plugins/${plugin[1]}",
   }
-  ~> exec { "rbenv-permissions-${name}":
-    command     => "/bin/chown -R ${rbenv::owner}:${rbenv::group} \
+  ~> exec { "nodenv-permissions-${name}":
+    command     => "/bin/chown -R ${nodenv::owner}:${nodenv::group} \
                     ${install_dir} && \
                     /bin/chmod -R g+w ${install_dir}",
     refreshonly => true,
@@ -65,7 +57,7 @@ define rbenv::plugin(
     exec { "update-${name}":
       command => '/usr/bin/git pull',
       cwd     => "${install_dir}/plugins/${plugin[1]}",
-      user    => $rbenv::owner,
+      user    => $nodenv::owner,
       onlyif  => "/usr/bin/test -d ${install_dir}/plugins/${plugin[1]}",
       unless  => '/usr/bin/git fetch --quiet; /usr/bin/test $(git rev-parse HEAD) == $(git rev-parse @{u})',
     }

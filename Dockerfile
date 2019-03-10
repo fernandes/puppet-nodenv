@@ -1,4 +1,4 @@
 FROM ruby:2.1-onbuild
-MAINTAINER Justin Downing <justin@downing.us>
+MAINTAINER Celso Fernandes <celso.fernandes@gmail.com>
 
 RUN bundle exec rake spec

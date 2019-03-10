@@ -1,27 +1,27 @@
-# == Define: rbenv::build
+# == Define: nodenv::build
 #
-# Calling this define will install Ruby in your default rbenv
+# Calling this define will install Ruby in your default nodenv
 # installs directory. Additionally, it can define the installed
 # ruby as the global interpretter. It will install the bundler gem.
 #
 # === Variables
 #
 # [$install_dir]
-#   This is set when you declare the rbenv class. There is no
-#   need to overrite it when calling the rbenv::build define.
-#   Default: $rbenv::install_dir
+#   This is set when you declare the nodenv class. There is no
+#   need to overrite it when calling the nodenv::build define.
+#   Default: $nodenv::install_dir
 #   This variable is required.
 #
 # [$owner]
-#   This is set when you declare the rbenv class. There is no
-#   need to overrite it when calling the rbenv::build define.
-#   Default: $rbenv::owner
+#   This is set when you declare the nodenv class. There is no
+#   need to overrite it when calling the nodenv::build define.
+#   Default: $nodenv::owner
 #   This variable is required.
 #
 # [$group]
-#   This is set when you declare the rbenv class. There is no
-#   need to overrite it when calling the rbenv::build define.
-#   Default: $rbenv::group
+#   This is set when you declare the nodenv class. There is no
+#   need to overrite it when calling the nodenv::build define.
+#   Default: $nodenv::group
 #   This variable is required.
 #
 # [$global]
@@ -32,11 +32,6 @@
 # [$keep]
 #   This is used to keep the source code of a compiled ruby.
 #   Default: false
-#   This variable is optional.
-#
-# [$env]
-#   This is used to set environment variables when compiling ruby.
-#   Default: []
 #   This variable is optional.
 #
 # [$patch]
@@ -52,56 +47,26 @@
 #
 # === Examples
 #
-# rbenv::build { '2.0.0-p247': global => true }
+# nodenv::build { '2.0.0-p247': global => true }
 #
 # === Authors
 #
 # Justin Downing <justin@downing.us>
 #
-define rbenv::build (
-  $install_dir      = $rbenv::install_dir,
-  $owner            = $rbenv::owner,
-  $group            = $rbenv::group,
+define nodenv::build (
+  $install_dir      = $nodenv::install_dir,
+  $owner            = $nodenv::owner,
+  $group            = $nodenv::group,
   $global           = false,
   $keep             = false,
-  $env              = $rbenv::env,
-  $patch            = undef,
   $bundler_version  = '>=0',
 ) {
-  include rbenv
+  include nodenv
 
   validate_bool($global)
   validate_bool($keep)
 
-  $environment_for_build = concat(["RBENV_ROOT=${install_dir}"], $env)
-
-  if $patch {
-    # Currently only accepts a single file that can be written to the local disk
-    if $patch =~ /^((puppet|file):\/\/\/.*)/ {
-      # Usually defaults to /var/lib/puppet
-      $patch_dir = "${::settings::vardir}/rbenv"
-      $patch_file = "${patch_dir}/${title}.patch"
-
-      File {
-        owner => 'root',
-        group => 'root',
-        mode  => '0644',
-      }
-
-      file { $patch_dir:
-        ensure  => directory,
-        recurse => true,
-        before  => File[$patch_file],
-      }
-      -> file { $patch_file:
-        ensure => file,
-        source => $patch,
-      }
-    }
-    else {
-      fail('Patch source invalid. Must be puppet:/// or file:///')
-    }
-  }
+  $environment_for_build = ["NODENV_ROOT=${install_dir}"]
 
   Exec {
     cwd         => $install_dir,
@@ -117,30 +82,27 @@ define rbenv::build (
     ],
   }
 
-  $install_options = join([ $keep ? { true => ' --keep', default => '' },
-                            # patch is a string so we must invert the
-                            # logic to use the selector
-                            $patch ? { undef => '', false => '', default => ' --patch' } ], '')
+  $install_options = join([ $keep ? { true => ' --keep', default => '' }], '')
 
   exec { "own-plugins-${title}":
     command => "chown -R ${owner}:${group} ${install_dir}/plugins",
     user    => 'root',
     unless  => "test -d ${install_dir}/versions/${title}",
-    require => Class['rbenv'],
+    require => Class['nodenv'],
   }
-  -> exec { "git-pull-rubybuild-${title}":
+  -> exec { "git-pull-nodebuild-${title}":
     command => 'git reset --hard HEAD && git pull',
-    cwd     => "${install_dir}/plugins/ruby-build",
+    cwd     => "${install_dir}/plugins/node-build",
     user    => 'root',
     unless  => "test -d ${install_dir}/versions/${title}",
-    require => Rbenv::Plugin['rbenv/ruby-build'],
+    require => Nodenv::Plugin['nodenv/node-build'],
   }
-  -> exec { "rbenv-install-${title}":
+  -> exec { "nodenv-install-${title}":
     # patch file must be read from stdin only if supplied
-    command => sprintf("rbenv install ${title}${install_options}%s", $patch ? { undef => '', false => '', default => " < ${patch_file}" }),
+    command => sprintf("nodenv install ${title}${install_options}"),
     creates => "${install_dir}/versions/${title}",
   }
-  ~> exec { "rbenv-ownit-${title}":
+  ~> exec { "nodenv-ownit-${title}":
     command     => "chown -R ${owner}:${group} \
                     ${install_dir}/versions/${title} && \
                     chmod -R g+w ${install_dir}/versions/${title}",
@@ -148,25 +110,12 @@ define rbenv::build (
     refreshonly => true,
   }
 
-  # Install Bundler with no docs
-  # The 2.5.x version of rdoc (used in Ruby 1.8.x and 1.9.x) causes
-  # this error if docs are included during puppet run:
-  #   ERROR:  While executing gem ... (TypeError)
-  #     can't convert nil into String
-  # Updating rdoc before installing gems via rbenv::gem also fixes this issue
-  rbenv::gem { "bundler-${title}":
-    gem          => 'bundler',
-    ruby_version => $title,
-    skip_docs    => true,
-    version      => $bundler_version,
-  }
-
   if $global == true {
-    exec { "rbenv-global-${title}":
-      command     => "rbenv global ${title}",
-      environment => ["RBENV_ROOT=${install_dir}"],
-      require     => Exec["rbenv-install-${title}"],
-      subscribe   => Exec["rbenv-ownit-${title}"],
+    exec { "nodenv-global-${title}":
+      command     => "nodenv global ${title}",
+      environment => ["NODENV_ROOT=${install_dir}"],
+      require     => Exec["nodenv-install-${title}"],
+      subscribe   => Exec["nodenv-ownit-${title}"],
       refreshonly => true,
     }
   }

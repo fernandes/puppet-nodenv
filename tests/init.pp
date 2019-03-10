@@ -1,1 +1,1 @@
-class { 'rbenv': }
+class { 'nodenv': }
